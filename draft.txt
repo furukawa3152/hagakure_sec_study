@@ -1,0 +1,53 @@
+Python勉強会やろうぜ:ouen-nya:
+
+お題：セキュリティを考える
+Anthropicのソースコード流出、Axiosに対してサプライチェーン攻撃など、何かとセキュリティが話題になる今日この頃、一度掘り下げてみたく、このお題で勉強会をしてみようと思います
+
+スライド分割（導入3枚）
+1 はじめに：背景のみ
+2 生成AIが書くコード：正しさは保証されない／ローカル→閉域→Webでリスクが増えやすい／ローカルでもキー・eval・pipに注意
+3 今日やること＋Slack接続確認
+
+APIキーを安全に使う（プロジェクトごとにキーを作る、コードに書かない、環境変数・.env と gitignore、GitHub Secrets、漏れたらローテーションのイメージ）
+ハンズオン１
+import os
+import openai
+from openai import OpenAI
+
+# APIキー利用の注意点
+# 漏れる前提で制御する（制限・監視）
+# コードに書かない=環境変数に入れる。
+# 最小権限にする（このコードなら、Responces=WriteのみでOK。）
+OPENAI_API_KEY = os.environ["API_KEY"]
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+input_text = input("質問を入れてね：")
+
+
+response = client.responses.create(
+    model="gpt-5.4-mini",
+    input= input_text
+)
+
+print(response.output_text)
+
+
+入力フォームは攻撃されると考える。
+プロンプトインジェクションの説明
+ハンズオン２
+input_text = input("質問を入れてね：")
+eval(input_text)
+
+[print(i) for i in range(1,11)]
+print(os.environ)
+
+
+requirements.txt などで依存を管理する意味（再現性・チーム共有・攻撃面の見える化・スキャナの前提）
+
+pip のライブラリにも脆弱性はある → リポジトリと Snyk を連携しておく話（無料枠でもかなり使える／深刻度や修正 PR まで）
+Snykの説明
+https://app.snyk.io/
+
+バージョン固定（requirements など）と、サプライチェーンの話（新しく出たパッケージは少し様子を見る、Takumi Guard などの一例）
+Takumi Guard の説明
+https://shisho.dev/docs/ja/r/202603-takumi-guard-pypi/
